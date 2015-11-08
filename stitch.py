@@ -51,12 +51,12 @@ for i in range(7144): # 7144 is the total frame count
     adjustColorRight2Mid(frame_2, frame_1)
 
     frame_0_warped = cv2.warpPerspective(frame_0,H_left,(w,h))
-    frame_2_warped = cv2.warpPerspective(frame_2,H_right,(w*2,h))
+    frame_2_warped = cv2.warpPerspective(frame_2,H_right,(w * 2,h))
 
     final = np.zeros((h,w*3,c),np.uint8)
-    final[:,:w,:] = frame_0_warped
-    final[:,w:w*2,:] = frame_1
-    final[:,w*2:,:] = frame_2_warped[:,w:,:]
+    final[:, :w, :] = frame_0_warped
+    final[:, w:w*2, :] = frame_1
+    final[:, w*2:, :] = frame_2_warped[:, w:, :]
 
     cv2.imshow('final', final)
     cv2.waitKey(30)
