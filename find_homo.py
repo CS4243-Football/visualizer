@@ -142,15 +142,15 @@ def stitchLeft2Mid(img1, img2, pts1, pts2):
     print pts1
     print 'points from second image'
     print pts2
-    tmp = np.zeros((img1.shape[0], img1.shape[1]*2, img1.shape[2]), np.uint8)
-    tmp[:,img1.shape[1]:,:] = img2
+    tmp = np.zeros((img1.shape[0], img1.shape[1]*2+500, img1.shape[2]), np.uint8)
+    tmp[:,img1.shape[1]+500:,:] = img2
     image2 = tmp
     for i in range(len(pts2)):
-        pts2[i] = [pts2[i][0]+img1.shape[1], pts2[i][1]]
+        pts2[i] = [pts2[i][0]+img1.shape[1]+500, pts2[i][1]]
     #compute homography matrix. Note this matrix just need to be computed once and can be applied to all your video frames afterwards
     H,inliers           = cv2.findHomography(np.float32(pts1), np.float32(pts2), cv.CV_RANSAC)
     image               = cv2.warpPerspective(image1,H,(image2.shape[1], image2.shape[0]))
-    image[:,image1.shape[1]:,:] = image2[:,image1.shape[1]:,:]
+    image[:,image1.shape[1]+500:,:] = image2[:,image1.shape[1]+500:,:]
     #write homography into files
     f = open('homography.left','w')
     for row in H:
