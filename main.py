@@ -2,6 +2,61 @@ import cv2
 import numpy as np
 from cv2 import cv
 
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+class Rectangle:
+    def __init__(self, track_window):
+        c, r, w, h = track_window
+        # self.top_left = Point(c, r)
+        # self.bottom_right = Point(c + w, r + h)
+
+        self.left = c
+        self.right = c + w
+        self.top = r
+        self.bottom = r + h
+
+    def top(self): 
+        return self.top
+
+
+    def bottom(self):
+        return self.bottom
+
+    def left(self):
+        return self.left
+
+    def right(self):
+        return self.right
+
+    def isOverlap(self, other):
+        if self.left() > other.right() or other.left() > self.right():
+            return False
+        
+        if self.top() > other.bottom() or other.top() > self.bottom():
+            return False
+
+        return True
+
+    def area(self):
+        return (self.right() - self.left()) * (self.bottom() - self.top())
+
+    def overlap_area(self, other):
+        isOverlap = self.isOverlap(other)
+
+        if isOverlap == False:
+            return 0
+        else:
+            left = max(self.left, other.left)
+            right = min(self.right, other.right)
+            bottom = max(self.bottom, other.bottom)
+            top = min(self.top, other.top)
+
+            intersection_area = (right - left) * (bottom - top)
+            return intersection_area
 
 class Player:
     def __init__(self, total_track_window_size, color, mask_lower_bound, mask_upper_bound):
@@ -209,6 +264,14 @@ def update_all_players_current_tracking_window(frame, all_players):
         player = all_players[i]
         print "Player Number", i
         update_track_window(frame, player)
+
+def justify_all_players_track_windows(frame, players):
+    for i in range(len(players)):
+        player = players[i]
+        for j in range(len(players))
+            if i != j:
+                other_player = players[j]
+                player
 
 
 def justified_track_window(player, new_track_window):
