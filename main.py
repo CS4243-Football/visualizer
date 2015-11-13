@@ -157,7 +157,9 @@ def mean_shift():
     cv2.imwrite("track_{}.jpg".format(0), frame)
 
     top_down_view(all_players, 0)
+
     for i in range(1, 7144):
+
         print "Next Frame Number is ", i
 
         frame = read_frame(i)
@@ -180,6 +182,7 @@ def mean_shift():
 
         draw_all_players_current_tracking_window(frame, all_players)
 
+
         frame_resized = cv2.resize(frame, None, fx=0.5, fy=0.5)
         cv2.imshow('frame',frame_resized)
         top_down_view(all_players, i)
@@ -188,6 +191,7 @@ def mean_shift():
             break
         else:
             cv2.imwrite("track_{}.jpg".format(i), frame)
+
 
 def setup_all_players():
     # red_players, blue_players = [], []
