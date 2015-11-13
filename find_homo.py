@@ -199,7 +199,7 @@ def getMatchedPointsFromImages(img1, img2):
         matchedPts1.append(kpts1[queryIdx].pt)
         matchedPts2.append(kpts2[trainIdx].pt)
     # as a last pruning step, we calculate the fundamental matrix of the matched points and remove outliers
-    matchedPts1,matchedPts2 = pruneMatchesRansac(matchedPts1, matchedPts2)
+    matchedPts1, matchedPts2 = pruneMatchesRansac(matchedPts1, matchedPts2)
     return matchedPts1, matchedPts2
 
 # mouse event for clicking to manually select matched points.
