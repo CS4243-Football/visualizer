@@ -58,7 +58,7 @@ def main():
 def mean_shift():
     frame = read_frame(0)
 
-    all_players,red_players, blue_players = setup_all_players()
+    all_players,red_players, blue_players, yellow_players = setup_all_players()
 
     draw_all_players_current_tracking_window(frame, all_players)
 
@@ -82,13 +82,13 @@ def mean_shift():
         else:
             cv2.imwrite("track_{}.jpg".format(i), frame)
 
-
 def setup_all_players():
     # red_players, blue_players = [], []
     all_players = []
     red_players = []
     blue_players = []
-    red_track_windows, blue_track_windows = setup_all_track_windows()
+    yellow_players = []
+    red_track_windows, blue_track_windows, yellow_track_windows = setup_all_track_windows()
     total_track_window_size = 8
 
     for i in range(len(red_track_windows)):
@@ -105,20 +105,40 @@ def setup_all_players():
         all_players.append(player)
         blue_players.append(player)
 
+    for i in range(len(yellow_track_windows)):
+        track_window = yellow_track_windows[i]
+        player = Player(total_track_window_size, (0, 255, 255), (30, 150, 150), (70, 255, 255))
+        player.add_track_window(track_window)
+        all_players.append(player)
+        yellow_players.append(player)
 
-    return all_players, red_players, blue_players
+    return all_players, red_players, blue_players, yellow_players
 
 
 def top_down_view(all_players, index):
     top_down_background_img_copy = top_down_background_img.copy()
+    #=========== modified from here ===============
+    height,width,channel = top_down_background_img_copy.shape
+    x_coord_red  = []
+    x_coord_blue = []
     for i in range(len(all_players)):
         player = all_players[i]
         color = player.color
         track_window = player.get_current_track_window()
         centroid = get_centroid(track_window)
         mapped_point = get_homography_mapped_point(centroid, homography_matrix)
+        if (color == (0,0,255)):
+            x_coord_red.append(mapped_point[0])
+        else:
+            x_coord_blue.append(mapped_point[0])
         cv2.circle(top_down_background_img_copy, mapped_point, 5, color, -1)
 
+    offsite_red_x = min(x_coord_red)
+    offsite_blue_x = max(x_coord_blue)
+    offset = 3
+    cv2.line(top_down_background_img_copy, (offsite_red_x-offset,0), (offsite_red_x-offset,height), (0,0,255), 2)
+    cv2.line(top_down_background_img_copy, (offsite_blue_x+offset,0), (offsite_blue_x+offset,height), (255,0,0), 2)
+    #========== modified end here =================
     cv2.imshow("Top Down View", top_down_background_img_copy)
     cv2.imwrite("view_{}.jpg".format(index), top_down_background_img_copy)
 
@@ -329,6 +349,9 @@ def setup_all_track_windows():
 		(2691, 192, 23, 41)
     ]
 
+    yellow_track_windows = [
+        (2300, 154, 20, 36)
+    ]
     # red_gradients = []
     # for i in range(len(red_track_windows)):
     #     red_gradients.append((0, 0))
@@ -338,7 +361,7 @@ def setup_all_track_windows():
     #     blue_gradients.append((0, 0))
 
 
-    return (red_track_windows, blue_track_windows)
+    return (red_track_windows, blue_track_windows, yellow_track_windows)
 
 
 def read_frame(frame_num):
