@@ -36,6 +36,7 @@ homography_matrix = [
 ]
 
 court_mask = cv2.imread("court_mask.jpg")
+top_down_background_img = cv2.imread("topdownField.jpg")
 
 def main():
     print "Main Function. Let the fun begin"
@@ -50,7 +51,9 @@ def mean_shift():
     draw_all_players_current_tracking_window(frame, all_players)
 
     cv2.imshow('frame',frame)
-    top_down_view(all_players)
+    cv2.imwrite("track_images/track_{}.jpg".format(0), frame)
+
+    top_down_view(all_players, 0)
     cv2.waitKey(0)
     for i in range(1, 5000):
         print "Next Frame Number is ", i
@@ -60,12 +63,12 @@ def mean_shift():
         draw_all_players_current_tracking_window(frame, all_players)
 
         cv2.imshow('frame',frame)
-        top_down_view(all_players)
+        top_down_view(all_players, i)
         k = cv2.waitKey(30) & 0xff
         if k == 27:
             break
         else:
-            cv2.imwrite("track_{}.jpg".format(i), frame)
+            cv2.imwrite("track_images/track_{}.jpg".format(i), frame)
 
 
 def setup_all_players():
@@ -89,9 +92,7 @@ def setup_all_players():
 
     return all_players
 
-def top_down_view(all_players):
-    top_down_background_img = cv2.imread("topdownField.jpg")
-
+def top_down_view(all_players, index):
 
     for i in range(len(all_players)):
         player = all_players[i]
@@ -102,6 +103,7 @@ def top_down_view(all_players):
         cv2.circle(top_down_background_img, mapped_point, 5, color, -1)
 
     cv2.imshow("Top Down View", top_down_background_img)
+    cv2.imwrite("top_down_view/view_{}.jpg".format(index), frame)
 
 def get_homography_mapped_point(point, homography_matrix):
     x, y = point
@@ -139,9 +141,9 @@ def mean_shift_tracking_window(fgmask, track_window, n):
     for i in range(h):
         for j in range(w):
             if frame_window[i, j] > 0:
-                M00 += frame_window[i, j]
-                M01 += j * frame_window[i, j]
-                M10 += i * frame_window[i, j]
+                M00 += 1#frame_window[i, j]
+                M01 += j#* frame_window[i, j]
+                M10 += i# * frame_window[i, j]
 
     if M00 == 0:
         return track_window
