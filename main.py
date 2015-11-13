@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from cv2 import cv
+from sets import Set
 
 class Point:
     def __init__(self, x, y):
@@ -33,16 +34,16 @@ class Rectangle:
         return self.right
 
     def isOverlap(self, other):
-        if self.left() > other.right() or other.left() > self.right():
+        if self.left > other.right or other.left > self.right:
             return False
         
-        if self.top() > other.bottom() or other.top() > self.bottom():
+        if self.top > other.bottom or other.top > self.bottom:
             return False
 
         return True
 
     def area(self):
-        return (self.right() - self.left()) * (self.bottom() - self.top())
+        return (self.right - self.left) * (self.bottom - self.top)
 
     def overlap_area(self, other):
         isOverlap = self.isOverlap(other)
@@ -66,6 +67,7 @@ class Player:
         self.mask_lower_bound = mask_lower_bound
         self.mask_upper_bound = mask_upper_bound
         self.adjusted_belfore = False
+        self.temp_new_track_window = False
 
     def add_track_window(self, track_window):
         self.track_windows.append(track_window)
@@ -83,6 +85,15 @@ class Player:
 
     def is_adjusted_before(self):
         return self.is_adjusted_before()
+
+    def set_temp_new_track_window(self, temp_new_track_window):
+        self.temp_new_track_window = temp_new_track_window
+
+    def get_temp_new_track_window(self):
+        return self.temp_new_track_window
+
+    def reset():
+        self.temp_new_track_window = false
 
 homography_matrix = [
     [6.45987489857, 23.3079670706, -11843.6959535],
@@ -127,6 +138,16 @@ def mean_shift():
 
         frame = read_frame(i)
         update_all_players_current_tracking_window(frame, all_players)
+        justify_all_players_track_windows(red_players)
+        justify_all_players_track_windows(blue_players)
+        justify_all_players_track_windows(yellow_players)
+
+        for i in range(len(all_players)):
+            player = all_players[i]
+            temp_new_track_window = player.get_temp_new_track_window()
+            player.add_track_window(temp_new_track_window)
+            player.set_temp_new_track_window(False)
+
         draw_all_players_current_tracking_window(frame, all_players)
 
         cv2.imshow('frame',frame)
@@ -190,7 +211,7 @@ def top_down_view(all_players, index):
 
     offsite_red_x = min(x_coord_red)
     offsite_blue_x = max(x_coord_blue)
-    offset = 3
+    offset = 5
     cv2.line(top_down_background_img_copy, (offsite_red_x-offset,0), (offsite_red_x-offset,height), (0,0,255), 2)
     cv2.line(top_down_background_img_copy, (offsite_blue_x+offset,0), (offsite_blue_x+offset,height), (255,0,0), 2)
     #========== modified end here =================
@@ -285,15 +306,45 @@ def update_all_players_current_tracking_window(frame, all_players):
         print "Player Number", i
         update_track_window(frame, player)
 
-def justify_all_players_track_windows(frame, players):
+def justify_all_players_track_windows(players):
+    threshold = 0.7
+    overlapped_players = Set([])
     for i in range(len(players)):
-        player = players[i]
-        for j in range(len(players))
-            if i != j:
-                other_player = players[j]
-                player
+        this_player = players[i]
 
+        if this_player not in overlapped_players:
 
+            for j in range(len(players)):
+
+                if i != j and players[j] not in overlapped_players:
+                    other_player = players[j]
+                    
+                    this_rect = Rectangle(this_player.get_temp_new_track_window())
+                    other_rect = Rectangle(other_player.get_temp_new_track_window())
+
+                    overlap_area = this_rect.overlap_area(other_rect)
+                    this_area = this_rect.area()
+                    other_area = other_rect.area()
+
+                    if float(overlap_area) / this_area > threshold or float(overlap_area) / other_area > threshold:
+                        overlapped_players.add(this_player)
+                        overlapped_players.add(other_player)
+
+    for player in overlapped_players:
+        justify_player_track_window(player)
+
+def justify_player_track_window(player):
+    player_track_windows = player.get_track_windows()
+
+    most_recent_old_window = player_track_windows[len(player_track_windows) - 1]
+    second_most_recent_old_window = player_track_windows[len(player_track_windows) - 2]
+    
+    x1, y1, w1, h1 = second_most_recent_old_window
+    x2, y2, w2, h2 =  most_recent_old_window
+    new_track_window = move_track_window(most_recent_old_window, (x2 - x1, y2 - y1))
+
+    player.set_temp_new_track_window(new_track_window)
+    
 def justified_track_window(player, new_track_window):
     player_track_windows = player.get_track_windows()
 
@@ -301,6 +352,8 @@ def justified_track_window(player, new_track_window):
     initial_track_window = player_track_windows[0]
     most_recent_old_window = player_track_windows[len(player_track_windows) - 1]
     second_most_recent_old_window = player_track_windows[len(player_track_windows) - 2]
+
+
     for i in range(1, len(player_track_windows)):
         old_track_window = player_track_windows[i]
         total_gradients += np.array(get_gradient(initial_track_window, old_track_window))
@@ -383,7 +436,7 @@ def update_track_window(frame, player):
     # if len(player.get_track_windows()) == player.total_track_window_size:
     #     new_track_window = justified_track_window(player, new_track_window)
 
-    player.add_track_window(new_track_window)
+    player.set_temp_new_track_window(new_track_window)
 
 
 
