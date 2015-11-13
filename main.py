@@ -35,6 +35,8 @@ homography_matrix = [
     [0.000538489309133, 0.0697341889234, 1.0]
 ]
 
+court_mask = cv2.imread("court_mask.jpg")
+
 def main():
     print "Main Function. Let the fun begin"
     mean_shift()
@@ -113,6 +115,8 @@ def get_mapped_centroid(track_window):
     mapped_point = get_homography_mapped_point(centroid, homography_matrix)
 
     return centroid
+
+
 def get_centroid(track_window):
     c, r, w, h = track_window
     xc = c + w/2
@@ -247,13 +251,15 @@ def get_gradient(w1, w2):
 
 
 def get_color_filtered_frame(frame, player):
+    court_filtered_frame = cv2.bitwise_and(frame, frame, mask=court_mask)
+
     mask_lower_bound = np.array(player.mask_lower_bound, dtype = "uint8")
 
     mask_upper_bound = np.array(player.mask_upper_bound, dtype = "uint8")
 
     color_mask = cv2.inRange(frame, mask_lower_bound, mask_upper_bound)
 
-    color_filtered_frame = cv2.bitwise_and(frame, frame, mask=color_mask)
+    color_filtered_frame = cv2.bitwise_and(court_filtered_frame, court_filtered_frame, mask=color_mask)
 
     return cv2.cvtColor(color_filtered_frame, cv2.COLOR_BGR2GRAY)
 
@@ -265,8 +271,8 @@ def update_track_window(frame, player):
 
     new_track_window = mean_shift_tracking_window(color_filtered_frame, old_track_window, 10)
 
-    if len(player.get_track_windows()) == player.total_track_window_size:
-        new_track_window = justified_track_window(player, new_track_window)
+    # if len(player.get_track_windows()) == player.total_track_window_size:
+    #     new_track_window = justified_track_window(player, new_track_window)
 
     player.add_track_window(new_track_window)
 
