@@ -40,25 +40,25 @@ top_down_background_img = cv2.imread("topdownField.jpg")
 
 def main():
     print "Main Function. Let the fun begin"
-    # mean_shift()
+    mean_shift()
 
-    for i in range(0, 5000):
-        frame = read_frame(i)
-
-        frame = cv2.bitwise_and(frame, court_mask)
-        cv2.imshow('frame',frame)
-        k = cv2.waitKey(30) & 0xff
-        if k == 27:
-            break
-        # else:
-        #     cv2.imwrite("track_{}.jpg".format(i), frame)
+    # for i in range(0, 5000):
+    #     frame = read_frame(i)
+    #
+    #     frame = cv2.bitwise_and(frame, court_mask)
+    #     cv2.imshow('frame',frame)
+    #     k = cv2.waitKey(30) & 0xff
+    #     if k == 27:
+    #         break
+    #     # else:
+    #     #     cv2.imwrite("track_{}.jpg".format(i), frame)
 
 
 
 def mean_shift():
     frame = read_frame(0)
 
-    all_players = setup_all_players()
+    all_players,red_players, blue_players = setup_all_players()
 
     draw_all_players_current_tracking_window(frame, all_players)
 
@@ -76,7 +76,7 @@ def mean_shift():
 
         cv2.imshow('frame',frame)
         top_down_view(all_players, i)
-        k = cv2.waitKey(30) & 0xff
+        k = cv2.waitKey(1) & 0xff
         if k == 27:
             break
         else:
@@ -86,6 +86,8 @@ def mean_shift():
 def setup_all_players():
     # red_players, blue_players = [], []
     all_players = []
+    red_players = []
+    blue_players = []
     red_track_windows, blue_track_windows = setup_all_track_windows()
     total_track_window_size = 8
 
@@ -94,15 +96,17 @@ def setup_all_players():
         player = Player(total_track_window_size, (0, 0, 255), (17, 15, 100), (50, 56, 200))
         player.add_track_window(track_window)
         all_players.append(player)
+        red_players.append(player)
 
     for i in range(len(blue_track_windows)):
         track_window = blue_track_windows[i]
         player = Player(total_track_window_size, (255, 0, 0), (40, 28, 4), (220, 187, 50))
         player.add_track_window(track_window)
         all_players.append(player)
+        blue_players.append(player)
 
 
-    return all_players
+    return all_players, red_players, blue_players
 
 
 def top_down_view(all_players, index):
