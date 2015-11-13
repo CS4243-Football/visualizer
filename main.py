@@ -67,13 +67,23 @@ def mean_shift():
 
     top_down_view(all_players, 0)
     cv2.waitKey(0)
-    for i in range(1, 5000):
+    players_current_distance = np.zeros(len(all_players))
+    players_last_position = np.zeros([len(all_players), 2])
+    for i in range(0, len(all_players)):
+        players_last_position[i, :] = get_centroid(all_players[i].get_current_track_window())
+		
+    for i in range(1, 30):
         print "Next Frame Number is ", i
 
         frame = read_frame(i)
         update_all_players_current_tracking_window(frame, all_players)
         draw_all_players_current_tracking_window(frame, all_players)
-
+        for j in range(0, len(all_players)):
+            thisx, thisy = get_centroid(all_players[j].get_current_track_window())
+            lastx, lasty = players_last_position[j][0], players_last_position[j][1]
+            players_current_distance[j] += np.sqrt((lastx - thisx) * (lastx - thisx) + (lasty - thisy) * (lasty - thisy))
+            players_last_position[j][0], players_last_position[j][1] = thisx, thisy
+			
         cv2.imshow('frame',frame)
         top_down_view(all_players, i)
         k = cv2.waitKey(1) & 0xff
@@ -81,6 +91,15 @@ def mean_shift():
             break
         else:
             cv2.imwrite("track_{}.jpg".format(i), frame)
+			
+    for i in range(0, len(all_players)):
+        if i < 8:
+            print "Player ", i, " from the Red Team "
+        elif i == 8:
+            print "The referee "
+        else:
+            print "Player ", i, " from the Blue Team "
+        print "covered a distance of ", players_current_distance[i] / 711 * 105, " meters."
 
 def setup_all_players():
     # red_players, blue_players = [], []
