@@ -71,7 +71,7 @@ def pruneMatchesBySymetry(matches12, matches21):
 def pruneMatchesRansac(pts1, pts2):
     if len(pts1) != len(pts2):
         print "[ERROR apiFeature.pruneMatchesRansac] input not same length"       
-    if len(pts1)>=7:
+    if len(pts1)>=8:
         #F is the fundamental matrix.
         #this method find F which minimizes the outliers
         #RANSAC is a fast method for ind the F by randomly selecting a few points from the pool for testing instead of
@@ -142,15 +142,15 @@ def stitchLeft2Mid(img1, img2, pts1, pts2):
     print pts1
     print 'points from second image'
     print pts2
-    tmp = np.zeros((img1.shape[0], img1.shape[1]*2, img1.shape[2]), np.uint8)
-    tmp[:,img1.shape[1]:,:] = img2
+    tmp = np.zeros((img1.shape[0], img1.shape[1]*2+500, img1.shape[2]), np.uint8)
+    tmp[:,img1.shape[1]+500:,:] = img2
     image2 = tmp
     for i in range(len(pts2)):
-        pts2[i] = [pts2[i][0]+img1.shape[1], pts2[i][1]]
+        pts2[i] = [pts2[i][0]+img1.shape[1]+500, pts2[i][1]]
     #compute homography matrix. Note this matrix just need to be computed once and can be applied to all your video frames afterwards
     H,inliers           = cv2.findHomography(np.float32(pts1), np.float32(pts2), cv.CV_RANSAC)
     image               = cv2.warpPerspective(image1,H,(image2.shape[1], image2.shape[0]))
-    image[:,image1.shape[1]:,:] = image2[:,image1.shape[1]:,:]
+    image[:,image1.shape[1]+500:,:] = image2[:,image1.shape[1]+500:,:]
     #write homography into files
     f = open('homography.left','w')
     for row in H:
@@ -190,7 +190,7 @@ def getMatchedPointsFromImages(img1, img2):
     # a strong match should give same pairs of points whether we match forward or backward. So we discard points which
     # does not satisfy this symetry criteria 
     matches             = pruneMatchesBySymetry(matches12RatioTested, matches21RatioTested)
-    # the next pruning needs coordinates of the amtched pairs, so we first store the points into lists
+    # the next pruning needs coordinates of the matched pairs, so we first store the points into lists
     matchedPts1         = []
     matchedPts2         = []
     for match in matches:
