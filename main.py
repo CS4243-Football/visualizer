@@ -40,7 +40,19 @@ top_down_background_img = cv2.imread("topdownField.jpg")
 
 def main():
     print "Main Function. Let the fun begin"
-    mean_shift()
+    # mean_shift()
+
+    for i in range(0, 5000):
+        frame = read_frame(i)
+
+        frame = cv2.bitwise_and(frame, court_mask)
+        cv2.imshow('frame',frame)
+        k = cv2.waitKey(30) & 0xff
+        if k == 27:
+            break
+        # else:
+        #     cv2.imwrite("track_{}.jpg".format(i), frame)
+
 
 
 def mean_shift():
@@ -51,7 +63,7 @@ def mean_shift():
     draw_all_players_current_tracking_window(frame, all_players)
 
     cv2.imshow('frame',frame)
-    cv2.imwrite("track_images/track_{}.jpg".format(0), frame)
+    cv2.imwrite("track_{}.jpg".format(0), frame)
 
     top_down_view(all_players, 0)
     cv2.waitKey(0)
@@ -68,7 +80,7 @@ def mean_shift():
         if k == 27:
             break
         else:
-            cv2.imwrite("track_images/track_{}.jpg".format(i), frame)
+            cv2.imwrite("track_{}.jpg".format(i), frame)
 
 
 def setup_all_players():
@@ -92,18 +104,20 @@ def setup_all_players():
 
     return all_players
 
-def top_down_view(all_players, index):
 
+def top_down_view(all_players, index):
+    top_down_background_img_copy = top_down_background_img.copy()
     for i in range(len(all_players)):
         player = all_players[i]
         color = player.color
         track_window = player.get_current_track_window()
         centroid = get_centroid(track_window)
         mapped_point = get_homography_mapped_point(centroid, homography_matrix)
-        cv2.circle(top_down_background_img, mapped_point, 5, color, -1)
+        cv2.circle(top_down_background_img_copy, mapped_point, 5, color, -1)
 
-    cv2.imshow("Top Down View", top_down_background_img)
-    cv2.imwrite("top_down_view/view_{}.jpg".format(index), frame)
+    cv2.imshow("Top Down View", top_down_background_img_copy)
+    cv2.imwrite("view_{}.jpg".format(index), top_down_background_img_copy)
+
 
 def get_homography_mapped_point(point, homography_matrix):
     x, y = point
@@ -112,11 +126,12 @@ def get_homography_mapped_point(point, homography_matrix):
 
     return (int(mapped_point[0][0] / mapped_point[2][0]), int(mapped_point[1][0] / mapped_point[2][0]))
 
+
 def get_mapped_centroid(track_window):
     centroid = get_centroid(track_window)
     mapped_point = get_homography_mapped_point(centroid, homography_matrix)
 
-    return centroid
+    return mapped_point
 
 
 def get_centroid(track_window):
@@ -138,9 +153,12 @@ def mean_shift_tracking_window(fgmask, track_window, n):
     M01 = 0.0
     M10 = 0.0
 
+
     for i in range(h):
         for j in range(w):
-            if frame_window[i, j] > 0:
+            if len(frame_window) > i \
+                    and len(frame_window[i]) > j \
+                    and frame_window[i, j] > 0:
                 M00 += 1#frame_window[i, j]
                 M01 += j#* frame_window[i, j]
                 M10 += i# * frame_window[i, j]
@@ -253,7 +271,9 @@ def get_gradient(w1, w2):
 
 
 def get_color_filtered_frame(frame, player):
-    court_filtered_frame = cv2.bitwise_and(frame, frame, mask=court_mask)
+    print frame.shape
+    print court_mask.shape
+    court_filtered_frame = cv2.bitwise_and(frame, court_mask)
 
     mask_lower_bound = np.array(player.mask_lower_bound, dtype = "uint8")
 
