@@ -71,7 +71,7 @@ def pruneMatchesBySymetry(matches12, matches21):
 def pruneMatchesRansac(pts1, pts2):
     if len(pts1) != len(pts2):
         print "[ERROR apiFeature.pruneMatchesRansac] input not same length"       
-    if len(pts1)>=7:
+    if len(pts1)>=8:
         #F is the fundamental matrix.
         #this method find F which minimizes the outliers
         #RANSAC is a fast method for ind the F by randomly selecting a few points from the pool for testing instead of
@@ -190,7 +190,7 @@ def getMatchedPointsFromImages(img1, img2):
     # a strong match should give same pairs of points whether we match forward or backward. So we discard points which
     # does not satisfy this symetry criteria 
     matches             = pruneMatchesBySymetry(matches12RatioTested, matches21RatioTested)
-    # the next pruning needs coordinates of the amtched pairs, so we first store the points into lists
+    # the next pruning needs coordinates of the matched pairs, so we first store the points into lists
     matchedPts1         = []
     matchedPts2         = []
     for match in matches:
