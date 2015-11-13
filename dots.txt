@@ -1,0 +1,35 @@
+def setup_all_track_windows():
+    red_track_windows = [
+		(2028, 154, 20, 36),
+		(2097, 110, 17, 30),
+		(2228, 131, 17, 31),
+		(2267, 157, 21, 37),
+		(2298, 243, 27, 48),
+		(2355, 136, 20, 35),
+		(2395, 115, 16, 28),
+		(2709, 211, 24, 43)
+    ]
+
+    blue_track_windows = [
+		(2062, 171, 19, 33),
+		(2245, 196, 22, 40),
+		(2307, 126, 16, 29),
+		(2366, 150, 16, 29),
+		(2401, 138, 20, 35),
+		(2430, 126, 19, 27),
+		(2430, 151, 17, 31),
+		(2506, 145, 19, 33),
+		(2561, 157, 22, 39),
+		(2691, 192, 23, 41)
+    ]
+
+    # red_gradients = []
+    # for i in range(len(red_track_windows)):
+    #     red_gradients.append((0, 0))
+    #
+    # blue_gradients = []
+    # for i in range(len(blue_track_windows)):
+    #     blue_gradients.append((0, 0))
+
+
+    return (red_track_windows, blue_track_windows)
