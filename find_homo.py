@@ -199,7 +199,7 @@ def getMatchedPointsFromImages(img1, img2):
         matchedPts1.append(kpts1[queryIdx].pt)
         matchedPts2.append(kpts2[trainIdx].pt)
     # as a last pruning step, we calculate the fundamental matrix of the matched points and remove outliers
-    matchedPts1, matchedPts2 = pruneMatchesRansac(matchedPts1, matchedPts2)
+    matchedPts1,matchedPts2 = pruneMatchesRansac(matchedPts1, matchedPts2)
     return matchedPts1, matchedPts2
 
 # mouse event for clicking to manually select matched points.
@@ -242,12 +242,12 @@ def adjustColorRight2Mid(src, dst):
 np.set_printoptions(suppress=True)
 
 # homography.left is calculated using frame number 5113
-frameX0 = cv2.imread('frames/fr_l_5113.jpg')
-frameX1 = cv2.imread('frames/fr_m_5113.jpg')
+# frameX0 = cv2.imread('frames/fr_l_5113.jpg')
+# frameX1 = cv2.imread('frames/fr_m_5113.jpg')
 
 # homography.right is calculated using frame number 5
-# frameX0 = cv2.imread('frame/fr_r_5.jpg')
-# frameX1 = cv2.imread('frame/fr_m_5.jpg')
+frameX0 = cv2.imread('frames/fr_m_5.jpg')
+frameX1 = cv2.imread('frames/fr_r_5.jpg')
 
 # save individual frames to disk
 # saveFrames(vidName2, 0.5)
@@ -272,8 +272,8 @@ while True:
         #make sure you have run "f"  getMatchedPointsFromImages
         #OR
         #you have manually selected matched features from images
-        image       = stitchLeft2Mid(frameX0,frameX1,pts1,pts2)
-        # image       = stitchRight2Mid(frameX0,frameX1,pts1,pts2)
+        # image       = stitchLeft2Mid(frameX0,frameX1,pts1,pts2)
+        image       = stitchRight2Mid(frameX0,frameX1,pts1,pts2)
     # press "f" to show automatically matched features
     if key == ord("f"):
         reset()

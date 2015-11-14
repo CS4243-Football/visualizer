@@ -13,19 +13,29 @@ find_homo.py
 ----------------------
 Before running this program, we have to convert each video source into individual frames first. This can be performed using the following function:
 	— saveFrames(vidName, frameName, scale)
+The frames are stored at the following folder:
+	- {project_folder}/frames/
 
 Then we could perform feature matching and homography computation separately for both the left and right frames. We used several pruning techniques in addition to the results returned by SIFT. Several pairs of frames have been tested and the best results are written to the disk as homography.left and homography.right.
 
-Please note our program cannot find both homographies at one time; it has to process two images, for example, left and middle, before proceeding to find the homography of middle and right image. 
+Once the program is launched, the image pair will be stacked side by side and different functions could be called by pressing the following keys:
+	- q	quit
+	- f	find matched points using SIFT
+	- c	clear matches
+	- s	show stitched image pair
+
+Please note our program cannot find both homographies at one time; it has to process two images, for example, left and middle, before proceeding to find the homography of middle and right image. In default setting, it finds homography.right. If one would like to find homography.left, the program has to be modified in the following way:
+	1. comment out line 249, 250 and 276
+	2. uncomment line 245, 246 and 275
 
 ----------------------
 stitch.py
 ----------------------
-This simple program adjusts colours of the three images to make them uniform and stitches all three images together, using the homographies calculated from the previous step.
+This simple program adjusts colours of the three images to make them uniform and stitches all three frames together, using the homographies calculated from the previous step.
 
 -----------------------
 main.py
-
+-----------------------
 The main program that execute tracking. In the script, the tracking algorithm we are using is Mean Shift Algorithm.
 
 This is how the program works:
@@ -48,5 +58,3 @@ Please run the script in this way:
 Make sure that you have
     1. "output_frames" folder for that is the folder holding the stitched image outputs.
     2. "court_mask.jpg" for that filter out all the unrelated parts of the video
-
------------------------
