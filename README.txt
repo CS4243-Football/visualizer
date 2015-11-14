@@ -25,4 +25,28 @@ This simple program adjusts colours of the three images to make them uniform and
 
 -----------------------
 main.py
+
+The main program that execute tracking. In the script, the tracking algorithm we are using is Mean Shift Algorithm.
+
+This is how the program works:
+    1. On the first frame of video, find out all the bounding boxes of each players, and classify those bounding boxes according to the players' color. Therefore, we have red_players, blue_players and yellow_players
+    2. for all the rest frames of video, run:
+        2.1 Execute the Mean Shift Algorithm to get the new track window for each player
+            2.1.1 For the original frame, extract the images within the court using court_mask
+            2.1.2 After extract the court images, do color selection mask to select color such as red, blue ow yellow, according to the player's color.
+            2.1.3 Do mean shift algorithm to get the new track window
+        2.2 Adjust Tracking Windows to avoid the overlapping of the same color players' track windows
+            2.2.1 For all tracking windows, select players whose tracking windows are overlaping with each other.
+            2.2.2 For each pair of players with overlapped tracking windows, see which players' motion has more dramastic change such as distance change and angle change.
+            2.2.3 For the player with more dramastic change, ignore the track window obtained by Mean Shift Algorithm, and create a new tracking window by predicting the possible positions of the player based on the motion history
+            2.2.4 For the player with less dramastic change, continue using the track window obtained by Mean Shift Algorithm
+        2.3 Draw the bounding boxes with color for each player
+        2.4 Do homography mapping for each player on the top down view
+Please run the script in this way:
+    python main.py
+
+Make sure that you have
+    1. "output_frames" folder for that is the folder holding the stitched image outputs.
+    2. "court_mask.jpg" for that filter out all the unrelated parts of the video
+
 -----------------------

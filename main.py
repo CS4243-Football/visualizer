@@ -68,8 +68,12 @@ class Player:
         self.mask_upper_bound = mask_upper_bound
         self.adjusted_belfore = False
         self.temp_new_track_window = False
+        self.dist = 0
 
     def add_track_window(self, track_window):
+        if len(self.track_windows) > 0:
+            most_recent_old_window =self.track_windows[len(self.track_windows) - 1]
+            self.dist += get_distance(most_recent_old_window, track_window)
         self.track_windows.append(track_window)
 
         while len(self.track_windows) > self.total_track_window_size:
@@ -120,6 +124,11 @@ class Player:
         average_gradient = total_gradients / sum
 
         return average_gradient
+
+    def get_dist(self):
+        return self.dist * 105 / 711
+
+
 homography_matrix = [
     [6.45987489857, 23.3079670706, -11843.6959535],
     [0.310938858094, 44.8291015983, -5873.0617813],
@@ -154,11 +163,11 @@ def mean_shift():
     draw_all_players_current_tracking_window(frame, all_players)
 
     cv2.imshow('frame',frame)
-    cv2.imwrite("track_{}.jpg".format(0), frame)
+    cv2.imwrite("track_0.jpg", frame)
 
     top_down_view(all_players, 0)
 
-    for i in range(1, 7144):
+    for i in range(1, 100):
 
         print "Next Frame Number is ", i
 
@@ -174,8 +183,8 @@ def mean_shift():
         # print "Yellow Players"
         justify_all_players_track_windows(yellow_players)
 
-        for i in range(len(all_players)):
-            player = all_players[i]
+        for j in range(len(all_players)):
+            player = all_players[j]
             temp_new_track_window = player.get_temp_new_track_window()
             player.add_track_window(temp_new_track_window)
             player.set_temp_new_track_window(False)
@@ -185,12 +194,21 @@ def mean_shift():
 
         frame_resized = cv2.resize(frame, None, fx=0.5, fy=0.5)
         cv2.imshow('frame',frame_resized)
+        cv2.imwrite("track_" + str(i) + ".jpg", frame)
         top_down_view(all_players, i)
         k = cv2.waitKey(1) & 0xff
         if k == 27:
             break
-        else:
-            cv2.imwrite("track_{}.jpg".format(i), frame)
+
+    show_all_player_running_distance(all_players)
+
+def show_all_player_running_distance(all_players):
+    for i in  range(len(all_players)):
+        player = all_players[i]
+        dist = player.get_dist()
+        print "Player {} has run".format(i), str(dist), "meters"
+
+
 
 
 def setup_all_players():
@@ -264,7 +282,7 @@ def top_down_view(all_players, index):
     cv2.line(top_down_background_img_copy, (offsite_blue_x+offset,0), (offsite_blue_x+offset,height), (255,0,0), 2)
     #========== modified end here =================
     cv2.imshow("Top Down View", top_down_background_img_copy)
-    cv2.imwrite("view_{}.jpg".format(index), top_down_background_img_copy)
+    cv2.imwrite("view_" + str(index) +".jpg", top_down_background_img_copy)
 
 
 def get_homography_mapped_point(point, homography_matrix):
