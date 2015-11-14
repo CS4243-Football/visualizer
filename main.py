@@ -1,7 +1,63 @@
 import cv2
 import numpy as np
 from cv2 import cv
+from sets import Set
 
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+class Rectangle:
+    def __init__(self, track_window):
+        c, r, w, h = track_window
+        # self.top_left = Point(c, r)
+        # self.bottom_right = Point(c + w, r + h)
+
+        self.left = c
+        self.right = c + w
+        self.top = r
+        self.bottom = r + h
+
+    def top(self): 
+        return self.top
+
+
+    def bottom(self):
+        return self.bottom
+
+    def left(self):
+        return self.left
+
+    def right(self):
+        return self.right
+
+    def isOverlap(self, other):
+        if self.left > other.right or other.left > self.right:
+            return False
+        
+        if self.top > other.bottom or other.top > self.bottom:
+            return False
+
+        return True
+
+    def area(self):
+        return (self.right - self.left) * (self.bottom - self.top)
+
+    def overlap_area(self, other):
+        isOverlap = self.isOverlap(other)
+
+        if isOverlap == False:
+            return 0
+        else:
+            left = max(self.left, other.left)
+            right = min(self.right, other.right)
+            bottom = max(self.bottom, other.bottom)
+            top = min(self.top, other.top)
+
+            intersection_area = (right - left) * (bottom - top)
+            return intersection_area
 
 class Player:
     def __init__(self, total_track_window_size, color, mask_lower_bound, mask_upper_bound):
@@ -11,8 +67,13 @@ class Player:
         self.mask_lower_bound = mask_lower_bound
         self.mask_upper_bound = mask_upper_bound
         self.adjusted_belfore = False
+        self.temp_new_track_window = False
+        self.dist = 0
 
     def add_track_window(self, track_window):
+        if len(self.track_windows) > 0:
+            most_recent_old_window =self.track_windows[len(self.track_windows) - 1]
+            self.dist += get_distance(most_recent_old_window, track_window)
         self.track_windows.append(track_window)
 
         while len(self.track_windows) > self.total_track_window_size:
@@ -28,6 +89,45 @@ class Player:
 
     def is_adjusted_before(self):
         return self.is_adjusted_before()
+
+    def set_temp_new_track_window(self, temp_new_track_window):
+        self.temp_new_track_window = temp_new_track_window
+
+    def get_temp_new_track_window(self):
+        return self.temp_new_track_window
+
+    def reset(self):
+        self.temp_new_track_window = False
+
+    def get_temp_new_track_window_moving_angle(self):
+        player_track_windows = self.get_track_windows()
+
+        most_recent_old_window = player_track_windows[len(player_track_windows) - 1]
+
+        average_gradient = self.get_average_velocity()
+        temp_new_gradient = np.array(get_gradient(most_recent_old_window, self.temp_new_track_window))
+        angle = angle_between(average_gradient, temp_new_gradient)
+
+        return angle
+
+    def get_average_velocity(self):
+        player_track_windows = self.get_track_windows()
+        initial_track_window = player_track_windows[0]
+
+        total_gradients = np.array([0, 0])
+        for i in range(1, len(player_track_windows)):
+            old_track_window = player_track_windows[i]
+            total_gradients += np.array(get_gradient(initial_track_window, old_track_window))
+
+        sum = (len(player_track_windows) - 1) * len(player_track_windows) / 2
+       
+        average_gradient = total_gradients / sum
+
+        return average_gradient
+
+    def get_dist(self):
+        return self.dist * 105 / 711
+
 
 homography_matrix = [
     [6.45987489857, 23.3079670706, -11843.6959535],
@@ -63,24 +163,53 @@ def mean_shift():
     draw_all_players_current_tracking_window(frame, all_players)
 
     cv2.imshow('frame',frame)
-    cv2.imwrite("track_{}.jpg".format(0), frame)
+    cv2.imwrite("track_0.jpg", frame)
 
     top_down_view(all_players, 0)
-    cv2.waitKey(0)
-    for i in range(1, 5000):
+
+    for i in range(1, 100):
+
         print "Next Frame Number is ", i
 
         frame = read_frame(i)
         update_all_players_current_tracking_window(frame, all_players)
+
+        # print "Red Players"
+        justify_all_players_track_windows(red_players)
+        #
+        # print "Blue Players"
+        justify_all_players_track_windows(blue_players)
+        #
+        # print "Yellow Players"
+        justify_all_players_track_windows(yellow_players)
+
+        for j in range(len(all_players)):
+            player = all_players[j]
+            temp_new_track_window = player.get_temp_new_track_window()
+            player.add_track_window(temp_new_track_window)
+            player.set_temp_new_track_window(False)
+
         draw_all_players_current_tracking_window(frame, all_players)
 
-        cv2.imshow('frame',frame)
+
+        frame_resized = cv2.resize(frame, None, fx=0.5, fy=0.5)
+        cv2.imshow('frame',frame_resized)
+        cv2.imwrite("track_" + str(i) + ".jpg", frame)
         top_down_view(all_players, i)
         k = cv2.waitKey(1) & 0xff
         if k == 27:
             break
-        else:
-            cv2.imwrite("track_{}.jpg".format(i), frame)
+
+    show_all_player_running_distance(all_players)
+
+def show_all_player_running_distance(all_players):
+    for i in  range(len(all_players)):
+        player = all_players[i]
+        dist = player.get_dist()
+        print "Player {} has run".format(i), str(dist), "meters"
+
+
+
 
 def setup_all_players():
     # red_players, blue_players = [], []
@@ -89,7 +218,7 @@ def setup_all_players():
     blue_players = []
     yellow_players = []
     red_track_windows, blue_track_windows, yellow_track_windows = setup_all_track_windows()
-    total_track_window_size = 8
+    total_track_window_size = 2
 
     for i in range(len(red_track_windows)):
         track_window = red_track_windows[i]
@@ -114,6 +243,19 @@ def setup_all_players():
 
     return all_players, red_players, blue_players, yellow_players
 
+def display_average_velocity(all_players):
+    for i in range(len(all_players)):
+        player = all_players[i]
+
+        player_track_windows = player.get_track_windows()
+        initial_track_window = player_track_windows[0]
+
+        total_gradients = np.array([0, 0])
+        for i in range(1, len(player_track_windows)):
+            old_track_window = player_track_windows[i]
+            total_gradients += np.array(get_gradient(initial_track_window, old_track_window))
+
+        m_sum = (len(player_track_windows) + 1) * len(player_track_windows) / 2
 
 def top_down_view(all_players, index):
     top_down_background_img_copy = top_down_background_img.copy()
@@ -135,12 +277,12 @@ def top_down_view(all_players, index):
 
     offsite_red_x = min(x_coord_red)
     offsite_blue_x = max(x_coord_blue)
-    offset = 3
+    offset = 5
     cv2.line(top_down_background_img_copy, (offsite_red_x-offset,0), (offsite_red_x-offset,height), (0,0,255), 2)
     cv2.line(top_down_background_img_copy, (offsite_blue_x+offset,0), (offsite_blue_x+offset,height), (255,0,0), 2)
     #========== modified end here =================
     cv2.imshow("Top Down View", top_down_background_img_copy)
-    cv2.imwrite("view_{}.jpg".format(index), top_down_background_img_copy)
+    cv2.imwrite("view_" + str(index) +".jpg", top_down_background_img_copy)
 
 
 def get_homography_mapped_point(point, homography_matrix):
@@ -165,6 +307,12 @@ def get_centroid(track_window):
 
     return (xc, yc)
 
+def get_center(track_window):
+    c, r, w, h = track_window
+    xc = c + w/2
+    yc = r + h/2
+
+    return (xc, yc)
 
 def mean_shift_tracking_window(fgmask, track_window, n):
     if n == 0:
@@ -212,7 +360,10 @@ def display_all_current_track_windows(all_players):
 
 def draw_rect_with_track_window(frame, track_window, color):
     x,y,w,h = track_window
-
+    x = int(x)
+    y = int(y)
+    w = int(w)
+    h = int(h)
     cv2.rectangle(frame, (x,y), (x+w,y+h), color, 2)
 
 
@@ -230,45 +381,54 @@ def update_all_players_current_tracking_window(frame, all_players):
         print "Player Number", i
         update_track_window(frame, player)
 
+def justify_all_players_track_windows(players):
+    threshold = 0.7
+    overlapped_players = {}
+    for i in range(len(players)):
+        this_player = players[i]
 
-def justified_track_window(player, new_track_window):
+        for j in range(i + 1, len(players)):
+
+            if players[j] not in overlapped_players:
+                other_player = players[j]
+                
+                this_rect = Rectangle(this_player.get_temp_new_track_window())
+                other_rect = Rectangle(other_player.get_temp_new_track_window())
+
+                overlap_area = this_rect.overlap_area(other_rect)
+                this_area = this_rect.area()
+                other_area = other_rect.area()
+
+                if float(overlap_area) / this_area > threshold or float(overlap_area) / other_area > threshold:
+                    overlapped_players[i] = j
+                   
+
+    for this_player_index, other_player_index in overlapped_players.iteritems():
+        this_player = players[this_player_index]
+        other_player = players[other_player_index]
+
+        angle1 = this_player.get_temp_new_track_window_moving_angle()
+        angle2 = other_player.get_temp_new_track_window_moving_angle()
+
+        print this_player_index, other_player_index, "angle", angle1, angle2
+        if angle1 > angle2 and angle1 > 90:
+            justify_player_track_window(this_player)
+        elif angle1 <= angle2 and angle2 > 90:
+            justify_player_track_window(other_player)
+        else:
+            justify_player_track_window(this_player)
+            justify_player_track_window(other_player)
+
+def justify_player_track_window(player):
     player_track_windows = player.get_track_windows()
-
-    total_gradients = np.array([0, 0])
-    initial_track_window = player_track_windows[0]
     most_recent_old_window = player_track_windows[len(player_track_windows) - 1]
-    second_most_recent_old_window = player_track_windows[len(player_track_windows) - 2]
-    for i in range(1, len(player_track_windows)):
-        old_track_window = player_track_windows[i]
-        total_gradients += np.array(get_gradient(initial_track_window, old_track_window))
 
-    average_gradient = total_gradients / len(player_track_windows)
-    temp_new_gradient = np.array(get_gradient(initial_track_window, new_track_window))
-    angle = angle_between(average_gradient, temp_new_gradient)
-    #
+    average_velocity = player.get_average_velocity()
+    print player.get_temp_new_track_window()
 
-    new_dist = get_distance(most_recent_old_window, new_track_window)
-    old_dist = get_distance(second_most_recent_old_window, most_recent_old_window)
-    print "angle", angle, "new_dist", new_dist, "old_dist", old_dist
-    if angle > 0 and angle < 180 and abs(new_dist - old_dist) > 4 and player.is_adjusted_before == False:#angle >= 90 and angle != 180:
-        print "Justify track window"
-        x1, y1, w1, h1 = player_track_windows[len(player_track_windows) - 2]
-        x2, y2, w2, h2 =  most_recent_old_window
-        new_track_window = move_track_window(most_recent_old_window, (x2 - x1, y2 - y1))
-        player.is_adjusted_before = True
-
-    return new_track_window
-
-
-
-    # old_velocity = get_gradient_length(old_graident)
-    # print "angle", angle, "dist", dist
-    # if angle > 30 or dist > 3:
-    #     print "update_new_track_window"
-    #
-    #     new_track_window = move_track_window(new_track_window, old_graident)
-    #
-    # return new_track_window
+    new_track_window = move_track_window(most_recent_old_window, average_velocity)
+    print average_velocity, new_track_window
+    player.set_temp_new_track_window(new_track_window)
 
 
 def get_gradient_length(gradient):
@@ -289,21 +449,19 @@ def move_track_window(track_window, velocity):
 
 
 def get_gradient(w1, w2):
-    x1, y1 = get_mapped_centroid(w1)
-    x2, y2 = get_mapped_centroid(w2)
+    x1, y1 = get_center(w1)
+    x2, y2 = get_center(w2)
     return (x2 - x1, y2 - y1)
 
 
 def get_color_filtered_frame(frame, player):
-    print frame.shape
-    print court_mask.shape
     court_filtered_frame = cv2.bitwise_and(frame, court_mask)
 
     mask_lower_bound = np.array(player.mask_lower_bound, dtype = "uint8")
 
     mask_upper_bound = np.array(player.mask_upper_bound, dtype = "uint8")
 
-    color_mask = cv2.inRange(frame, mask_lower_bound, mask_upper_bound)
+    color_mask = cv2.inRange(court_filtered_frame, mask_lower_bound, mask_upper_bound)
 
     color_filtered_frame = cv2.bitwise_and(court_filtered_frame, court_filtered_frame, mask=color_mask)
 
@@ -320,7 +478,7 @@ def update_track_window(frame, player):
     # if len(player.get_track_windows()) == player.total_track_window_size:
     #     new_track_window = justified_track_window(player, new_track_window)
 
-    player.add_track_window(new_track_window)
+    player.set_temp_new_track_window(new_track_window)
 
 
 
